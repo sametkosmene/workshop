@@ -1,0 +1,20 @@
+name: kill_session
+description: Kills a specific SQL Server session by session ID. Use with caution — confirm the session ID from blocking_chain or active_sessions first. Will raise an error if the session does not exist or is a system session.
+db_type: mssql
+default_database: master
+params:
+  session_id:
+    type: integer
+    description: The session_id (SPID) to kill. Must be a user session (>= 51).
+    required: true
+---
+IF {{session_id}} < 51
+    RAISERROR('Cannot kill system sessions (session_id < 51).', 16, 1);
+ELSE IF NOT EXISTS (SELECT 1 FROM sys.dm_exec_sessions WHERE session_id = {{session_id}})
+    RAISERROR('Session %d does not exist.', 16, 1, {{session_id}});
+ELSE
+BEGIN
+    DECLARE @sql NVARCHAR(50) = N'KILL ' + CAST({{session_id}} AS NVARCHAR(10));
+    EXEC sp_executesql @sql;
+    SELECT CAST({{session_id}} AS INT) AS killed_session_id, 'Session killed successfully' AS status;
+END
