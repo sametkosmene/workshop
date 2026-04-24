@@ -1,0 +1,16 @@
+name: sample_data
+description: Preview sample rows from a table
+db_type: mssql
+default_database: CRM
+params:
+  table_name:
+    type: string
+    description: Name of the table to sample
+    required: true
+  top_n:
+    type: integer
+    description: Number of rows to return
+    required: false
+    default: 10
+---
+SELECT TOP {{top_n}} * FROM {{table_name}}

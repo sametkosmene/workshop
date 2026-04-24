@@ -1,0 +1,18 @@
+name: deadlock_monitor_read
+description: Reads captured deadlock XML graphs from the deadlock_monitor Extended Events .xel file. Returns deadlock timestamp and full XML deadlock graph, newest first.
+db_type: mssql
+default_database: master
+---
+DECLARE @logdir NVARCHAR(500) = CAST(SERVERPROPERTY('ErrorLogFileName') AS NVARCHAR(500));
+SET @logdir = LEFT(@logdir, LEN(@logdir) - CHARINDEX('\', REVERSE(@logdir)) + 1);
+DECLARE @glob NVARCHAR(500) = @logdir + 'deadlocks*.xel';
+DECLARE @sql NVARCHAR(MAX) = N'
+SELECT
+    event_data.value(''(event/@timestamp)[1]'', ''datetime2'') AS deadlock_time,
+    event_data.value(''(event/data[@name="xml_report"]/value)[1]'', ''nvarchar(max)'') AS deadlock_graph
+FROM (
+    SELECT CAST(event_data AS XML) AS event_data
+    FROM sys.fn_xe_file_target_read_file(''' + @glob + ''', NULL, NULL, NULL)
+) AS tab
+ORDER BY deadlock_time DESC';
+EXEC sp_executesql @sql;

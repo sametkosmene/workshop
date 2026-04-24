@@ -1,0 +1,34 @@
+name: deadlock_monitor_setup
+description: Drops any existing deadlock_monitor Extended Events session, recreates it targeting a .xel file in the SQL Server log directory (resolved dynamically), and starts it. Safe to run multiple times.
+db_type: mssql
+default_database: master
+queries:
+  - drop_existing
+  - create_and_start
+---
+IF EXISTS (SELECT 1 FROM sys.server_event_sessions WHERE name = 'deadlock_monitor')
+BEGIN
+    ALTER EVENT SESSION [deadlock_monitor] ON SERVER STATE = STOP;
+    DROP EVENT SESSION [deadlock_monitor] ON SERVER;
+    SELECT 'Existing session dropped' AS step_result;
+END
+ELSE
+    SELECT 'No existing session found' AS step_result;
+---
+DECLARE @logdir NVARCHAR(500) = CAST(SERVERPROPERTY('ErrorLogFileName') AS NVARCHAR(500));
+SET @logdir = LEFT(@logdir, LEN(@logdir) - CHARINDEX('\', REVERSE(@logdir)) + 1);
+DECLARE @sql NVARCHAR(MAX) = N'
+CREATE EVENT SESSION [deadlock_monitor] ON SERVER
+ADD EVENT sqlserver.xml_deadlock_report
+ADD TARGET package0.event_file(SET filename=N''' + @logdir + 'deadlocks.xel'', max_file_size=50)
+WITH (MAX_MEMORY=4096 KB, EVENT_RETENTION_MODE=ALLOW_SINGLE_EVENT_LOSS, STARTUP_STATE=ON)';
+EXEC sp_executesql @sql;
+
+ALTER EVENT SESSION [deadlock_monitor] ON SERVER STATE = START;
+
+SELECT
+    name AS session_name,
+    event_retention_mode_desc,
+    CASE startup_state WHEN 1 THEN 'ON' ELSE 'OFF' END AS startup_state
+FROM sys.server_event_sessions
+WHERE name = 'deadlock_monitor';

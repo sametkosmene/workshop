@@ -1,0 +1,35 @@
+name: index_health
+description: Reports fragmented indexes in the current database, ordered by fragmentation percentage descending. Filters by minimum fragmentation percent and minimum page count to avoid noise from tiny indexes.
+db_type: mssql
+params:
+  min_frag:
+    type: float
+    description: Minimum average fragmentation percentage to include (default 10%)
+    required: false
+    default: 10
+  min_pages:
+    type: integer
+    description: Minimum number of pages the index must have to be included (default 100)
+    required: false
+    default: 100
+---
+DECLARE @min_frag  FLOAT  = {{min_frag}};
+DECLARE @min_pages BIGINT = {{min_pages}};
+
+SELECT
+    DB_NAME()                              AS database_name,
+    OBJECT_SCHEMA_NAME(ips.object_id)     AS schema_name,
+    OBJECT_NAME(ips.object_id)            AS table_name,
+    i.name                                AS index_name,
+    ips.index_type_desc,
+    ips.avg_fragmentation_in_percent,
+    ips.page_count,
+    ips.record_count
+FROM sys.dm_db_index_physical_stats(
+         DB_ID(), NULL, NULL, NULL, 'LIMITED') AS ips
+JOIN sys.indexes AS i
+  ON ips.object_id = i.object_id
+ AND ips.index_id  = i.index_id
+WHERE ips.avg_fragmentation_in_percent > @min_frag
+  AND ips.page_count                   > @min_pages
+ORDER BY ips.avg_fragmentation_in_percent DESC

@@ -1,0 +1,6 @@
+name: list_databases
+description: List all databases on the SQL Server instance
+db_type: mssql
+default_database: master
+---
+SELECT name, state_desc, recovery_model_desc FROM sys.databases ORDER BY name

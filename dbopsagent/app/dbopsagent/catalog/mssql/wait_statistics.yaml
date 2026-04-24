@@ -1,0 +1,25 @@
+name: wait_statistics
+description: Top 20 wait statistics (excluding idle/background waits) with percentage share per wait type. Use as the first step when investigating SQL Server performance issues.
+db_type: mssql
+default_database: master
+---
+SELECT TOP 20
+    wait_type,
+    waiting_tasks_count,
+    wait_time_ms,
+    max_wait_time_ms,
+    signal_wait_time_ms,
+    (wait_time_ms - signal_wait_time_ms) AS resource_wait_time_ms,
+    CAST(100.0 * wait_time_ms / SUM(wait_time_ms) OVER() AS DECIMAL(5,2)) AS pct
+FROM sys.dm_os_wait_stats
+WHERE wait_type NOT IN (
+    'SLEEP_TASK', 'BROKER_IO_FLUSH', 'SQLTRACE_BUFFER_FLUSH',
+    'CLR_AUTO_EVENT', 'CLR_MANUAL_EVENT', 'LAZYWRITER_SLEEP',
+    'CHECKPOINT_QUEUE', 'WAITFOR', 'BROKER_EVENTHANDLER',
+    'FT_IFTS_SCHEDULER_IDLE_WAIT', 'XE_DISPATCHER_WAIT',
+    'REQUEST_FOR_DEADLOCK_SEARCH', 'LOGMGR_QUEUE',
+    'ONDEMAND_TASK_QUEUE', 'BROKER_TRANSMITTER',
+    'HADR_FILESTREAM_IOMGR_IOCOMPLETION', 'DIRTY_PAGE_POLL'
+)
+AND waiting_tasks_count > 0
+ORDER BY wait_time_ms DESC

@@ -1,0 +1,41 @@
+name: active_connections
+description: >
+  Shows all active database connections with their state, current query, and duration.
+  Optionally filter by database name or minimum duration threshold.
+db_type: postgres
+default_database: postgres
+params:
+  database_name:
+    type: string
+    description: Filter by a specific database name. Leave empty to show all databases.
+    required: false
+    default: ""
+  min_duration_seconds:
+    type: integer
+    description: Only show connections running longer than this many seconds. Use 0 for all.
+    required: false
+    default: 0
+---
+SELECT
+    pid,
+    usename                                             AS username,
+    datname                                             AS database,
+    application_name,
+    CAST(client_addr AS TEXT)                           AS client_addr,
+    client_port,
+    CAST(backend_start AS TEXT)                         AS backend_start,
+    state,
+    wait_event_type,
+    wait_event,
+    CAST(now() - query_start AS TEXT)                   AS query_duration,
+    CAST(now() - state_change AS TEXT)                  AS time_in_state,
+    LEFT(query, 200)                                    AS current_query
+FROM pg_stat_activity
+WHERE state IS NOT NULL
+  AND pid <> pg_backend_pid()
+  AND ('{{database_name}}' = '' OR datname = '{{database_name}}')
+  AND (
+      query_start IS NULL
+      OR EXTRACT(EPOCH FROM (now() - query_start)) >= {{min_duration_seconds}}
+  )
+ORDER BY query_start ASC NULLS LAST;
