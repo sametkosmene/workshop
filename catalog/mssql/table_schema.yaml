@@ -1,0 +1,15 @@
+name: table_schema
+description: Show column details for a specific table
+db_type: mssql
+default_database: CRM
+params:
+  table_name:
+    type: string
+    description: Name of the table to describe
+    required: true
+---
+SELECT c.name AS column_name, t.name AS data_type, c.max_length, c.is_nullable, c.is_identity
+FROM sys.columns c
+JOIN sys.types t ON c.user_type_id = t.user_type_id
+WHERE c.object_id = OBJECT_ID('{{table_name}}')
+ORDER BY c.column_id

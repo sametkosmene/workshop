@@ -1,0 +1,19 @@
+name: table_schema
+description: Show column details for a specific table
+db_type: postgres
+default_database: workshop
+params:
+  schema_name:
+    type: string
+    description: Schema name
+    required: false
+    default: hr
+  table_name:
+    type: string
+    description: Table name
+    required: true
+---
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_schema = '{{schema_name}}' AND table_name = '{{table_name}}'
+ORDER BY ordinal_position

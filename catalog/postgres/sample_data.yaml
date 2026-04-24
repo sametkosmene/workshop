@@ -1,0 +1,21 @@
+name: sample_data
+description: Preview sample rows from a table
+db_type: postgres
+default_database: workshop
+params:
+  schema_name:
+    type: string
+    description: Schema name
+    required: false
+    default: hr
+  table_name:
+    type: string
+    description: Table name
+    required: true
+  limit_n:
+    type: integer
+    description: Number of rows to return
+    required: false
+    default: 10
+---
+SELECT * FROM {{schema_name}}.{{table_name}} LIMIT {{limit_n}}

@@ -1,0 +1,14 @@
+name: active_sessions
+description: Show active sessions and what they are doing
+db_type: mssql
+default_database: master
+---
+SELECT s.session_id, s.login_name, s.status, s.host_name,
+  DB_NAME(s.database_id) AS database_name,
+  r.command, r.wait_type, r.wait_time,
+  LEFT(t.text, 200) AS query_text
+FROM sys.dm_exec_sessions s
+LEFT JOIN sys.dm_exec_requests r ON s.session_id = r.session_id
+OUTER APPLY sys.dm_exec_sql_text(r.sql_handle) t
+WHERE s.is_user_process = 1
+ORDER BY s.session_id

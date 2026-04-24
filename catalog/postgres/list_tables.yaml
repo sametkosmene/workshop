@@ -1,0 +1,15 @@
+name: list_tables
+description: List all tables in a schema
+db_type: postgres
+default_database: workshop
+params:
+  schema:
+    type: string
+    default: public
+    description: Schema name to list tables from
+---
+SELECT table_schema, table_name
+FROM information_schema.tables
+WHERE table_schema = '{{schema}}'
+  AND table_type = 'BASE TABLE'
+ORDER BY table_name
