@@ -1,16 +1,3 @@
 {
-  "targets": {
-    "default": {
-      "resources": {
-        "runtimes": {
-          "dbopsagent": {
-            "runtimeId": "dbopsagent_dbopsagent-iEdaVkBJUQ",
-            "runtimeArn": "arn:aws:bedrock-agentcore:us-east-1:713881802313:runtime/dbopsagent_dbopsagent-iEdaVkBJUQ",
-            "roleArn": "arn:aws:iam::713881802313:role/code-editor-AgentCoreExecRole"
-          }
-        },
-        "stackName": "AgentCore-dbopsagent-default"
-      }
-    }
-  }
+  "targets": {}
 }
