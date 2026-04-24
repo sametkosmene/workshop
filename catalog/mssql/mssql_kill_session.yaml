@@ -1,0 +1,7 @@
+name: mssql_kill_session
+description: Kill a SQL Server session by session ID | params: session_id(integer)
+db_type: mssql
+sql: KILL {session_id}
+params:
+  - name: session_id
+    type: integer
